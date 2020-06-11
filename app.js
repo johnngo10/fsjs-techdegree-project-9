@@ -3,14 +3,29 @@
 // load modules
 const express = require("express");
 const morgan = require("morgan");
+const routes = require("./routes");
 const { sequelize, models } = require("./db");
+
+// Get reference to models
+const { Course, User } = models;
 
 async () => {
   try {
     // Test connection to the database
     console.log("Connection to the database successful!");
     await sequelize.authenticate();
-  } catch (error) {}
+
+    // Sync models
+    console.log("Synchronizing models with database..");
+    await sequelize.sync({ force: true });
+  } catch (error) {
+    if (error.name === "SequelizeValidationError") {
+      const errors = error.errors.map((err) => err.message);
+      console.err("Validation errors: ", errors);
+    } else {
+      throw error;
+    }
+  }
 };
 
 // variable to enable global error logging
@@ -24,7 +39,7 @@ const app = express();
 app.use(morgan("dev"));
 
 // TODO setup your api routes here
-app.get("/api/courses");
+app.use("/api", routes);
 
 // setup a friendly greeting for the root route
 app.get("/", (req, res) => {
