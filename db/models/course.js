@@ -12,9 +12,11 @@ module.exports = (sequelize) => {
       },
       title: {
         type: Sequelize.STRING,
+        allowNull: false,
       },
       description: {
         type: Sequelize.TEXT,
+        allowNull: false,
       },
       estimatedTime: {
         type: Sequelize.STRING,

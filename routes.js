@@ -4,6 +4,7 @@ const express = require("express");
 const { check, validationResult } = require("express-validator");
 const bcryptjs = require("bcryptjs");
 const auth = require("basic-auth");
+const Course = require("./db/models/").Course;
 
 function asyncHandler(cb) {
   return async (req, res, next) => {
@@ -115,8 +116,75 @@ router.get("/users", authenticateUser, (req, res) => {
 });
 
 // Returns a list of courses
-router.get("/courses", asyncHandler(async (req, res) => {
-  const courses = 
-}));
+router.get(
+  "/courses",
+  asyncHandler(async (req, res) => {
+    const courses = await Course.findAll();
+    res.json(courses);
+  })
+);
+
+// Returns a course for the provided course id
+router.get(
+  "/courses/:id",
+  asyncHandler(async (req, res) => {
+    try {
+      const course = await Course.findByPk(req.params.id);
+      if (course) {
+        res.json(course);
+      } else {
+        res.status(404).json({ message: "Quote not found" });
+      }
+      res.json(course);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  })
+);
+
+// Creates a course
+router.post(
+  "/courses",
+  asyncHandler(async (req, res) => {
+    let course;
+    try {
+      course = await Course.create(req.body);
+    } catch (error) {
+      if (error.name === "SequelizeValidationError") {
+        book = await Course.build(req.body);
+      } else {
+        throw error;
+      }
+    }
+  })
+);
+
+// Updates a course
+router.put(
+  "/courses/:id",
+  asyncHandler(async (req, res) => {
+    const course = await Course.findByPk(req.params.id);
+    if (course) {
+      await course.update(req.body);
+      res.status(204).end();
+    } else {
+      res.status(404).json({ message: "Quote Not Found" });
+    }
+  })
+);
+
+// Deletes a course
+router.delete(
+  "/courses/:id",
+  asyncHandler(async (req, res, next) => {
+    const course = await Course.findByPk(req.params.id);
+    if (course) {
+      await course.destroy();
+      res.status(204).end();
+    } else {
+      res.status(404).json({ message: "Quote Not Found" });
+    }
+  })
+);
 
 module.exports = router;
