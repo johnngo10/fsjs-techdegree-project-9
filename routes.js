@@ -4,7 +4,7 @@ const express = require("express");
 const { check, validationResult } = require("express-validator");
 const bcryptjs = require("bcryptjs");
 const auth = require("basic-auth");
-const Course = require("./db/models/").Course;
+const Course = require("./db/models/course");
 
 function asyncHandler(cb) {
   return async (req, res, next) => {
@@ -118,6 +118,7 @@ router.get("/users", authenticateUser, (req, res) => {
 // Returns a list of courses
 router.get(
   "/courses",
+  authenticateUser,
   asyncHandler(async (req, res) => {
     const courses = await Course.findAll();
     res.json(courses);
@@ -145,6 +146,7 @@ router.get(
 // Creates a course
 router.post(
   "/courses",
+  authenticateUser,
   asyncHandler(async (req, res) => {
     let course;
     try {
@@ -162,6 +164,7 @@ router.post(
 // Updates a course
 router.put(
   "/courses/:id",
+  authenticateUser,
   asyncHandler(async (req, res) => {
     const course = await Course.findByPk(req.params.id);
     if (course) {
@@ -176,6 +179,7 @@ router.put(
 // Deletes a course
 router.delete(
   "/courses/:id",
+  authenticateUser,
   asyncHandler(async (req, res, next) => {
     const course = await Course.findByPk(req.params.id);
     if (course) {

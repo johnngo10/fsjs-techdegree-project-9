@@ -7,7 +7,7 @@ const routes = require("./routes");
 const { sequelize, models } = require("./db");
 
 // Get reference to models
-const { Course, User } = models;
+const { User, Course } = models;
 
 async () => {
   try {
