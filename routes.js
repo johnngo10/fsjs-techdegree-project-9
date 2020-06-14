@@ -4,7 +4,8 @@ const express = require("express");
 const { check, validationResult } = require("express-validator");
 const bcryptjs = require("bcryptjs");
 const auth = require("basic-auth");
-const Course = require("./db/models/course");
+const { models } = require("./db");
+const { User, Course } = models;
 
 function asyncHandler(cb) {
   return async (req, res, next) => {
@@ -26,26 +27,30 @@ const router = express.Router();
 router.post(
   "/users",
   [
-    [
-      check("name")
-        .exists({
-          checkNull: true,
-          checkFalsy: true,
-        })
-        .withMessage('Please provide a value for "name"'),
-      check("username")
-        .exists({
-          checkNull: true,
-          checkFalsy: true,
-        })
-        .withMessage('Please provide a value for "username"'),
-      check("password")
-        .exists({
-          checkNull: true,
-          checkFalsy: true,
-        })
-        .withMessage('Please provide a value for "password"'),
-    ],
+    check("firstName")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "firstName"'),
+    check("lastName")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "lastName"'),
+    check("emailAddress")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "emailAddress"'),
+    check("password")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "password"'),
   ],
   (req, res) => {
     // Get validation result from request object
@@ -53,7 +58,7 @@ router.post(
     // If there are validation errors
     if (!errors.isEmpty()) {
       // Get list of error messages
-      const errorMessages = error.array().map((error) => error.msg);
+      const errorMessages = errors.array().map((error) => error.msg);
       // Return the validation errors to the client
       return res.status(400).json({ errors: errorMessages });
     }
@@ -62,7 +67,7 @@ router.post(
     // Hash new user's password
     user.password = bcryptjs.hashSync(user.password);
     // Add user to the `users` array
-    user.push(user);
+    users.push(user);
     // set status to 201 and end response
     res.status(201).end();
   }
@@ -75,7 +80,7 @@ const authenticateUser = (req, res, next) => {
   // If the user's credentials are available...
   if (credentials) {
     // Retrieve user data
-    const user = users.find((u) => u.username === credentials.name);
+    const user = users.find((u) => u.emailAddress === credentials.name);
     // If a user was successfully retrieved from the data
     if (user) {
       const authenticated = bcryptjs.compareSync(
@@ -84,13 +89,13 @@ const authenticateUser = (req, res, next) => {
       );
       // If password match
       if (authenticated) {
-        console.log(`Authentication successful for username: ${user.username}`);
+        console.log(`Authentication successful for user: ${user.emailAddress}`);
         req.currentUser = user;
       } else {
-        message = `Authentication failure for username: ${user.username}`;
+        message = `Authentication failure for user: ${user.emailAddress}`;
       }
     } else {
-      message = `User not found for username: ${credentials.name}`;
+      message = `User not found for email address: ${credentials.name}`;
     }
   } else {
     message = "Auth header not found";
@@ -110,8 +115,8 @@ const authenticateUser = (req, res, next) => {
 router.get("/users", authenticateUser, (req, res) => {
   const user = req.currentUser;
   res.json({
-    name: user.name,
-    username: user.username,
+    name: user.firstName,
+    emailAddress: user.emailAddress,
   });
 });
 
@@ -148,15 +153,13 @@ router.post(
   "/courses",
   authenticateUser,
   asyncHandler(async (req, res) => {
-    let course;
-    try {
-      course = await Course.create(req.body);
-    } catch (error) {
-      if (error.name === "SequelizeValidationError") {
-        book = await Course.build(req.body);
-      } else {
-        throw error;
-      }
+    if (req.body.title && req.body.description && req.body.userId) {
+      const course = await Course.create(req.body);
+      res.status(201).json(course);
+    } else {
+      res
+        .status(400)
+        .json({ message: "Title, description and userId require." });
     }
   })
 );
