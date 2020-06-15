@@ -159,7 +159,7 @@ router.post(
     } else {
       res
         .status(400)
-        .json({ message: "Title, description and userId require." });
+        .json({ message: "Title, description and userId required." });
     }
   })
 );
@@ -170,11 +170,13 @@ router.put(
   authenticateUser,
   asyncHandler(async (req, res) => {
     const course = await Course.findByPk(req.params.id);
-    if (course) {
+    if (req.body.title && req.body.description && req.body.userId) {
       await course.update(req.body);
       res.status(204).end();
     } else {
-      res.status(400).json({ message: "Quote Not Found" });
+      res
+        .status(400)
+        .json({ message: "title, description and userID required" });
     }
   })
 );
