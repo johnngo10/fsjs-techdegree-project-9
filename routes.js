@@ -139,7 +139,7 @@ router.get(
       if (course) {
         res.json(course);
       } else {
-        res.status(404).json({ message: "Quote not found" });
+        res.status(400).json({ message: "Quote not found" });
       }
       res.json(course);
     } catch (err) {
@@ -191,7 +191,7 @@ router.delete(
       await course.destroy();
       res.status(204).end();
     } else {
-      res.status(404).json({ message: "Quote Not Found" });
+      res.status(400).json({ message: "Course Not Found" });
     }
   })
 );
