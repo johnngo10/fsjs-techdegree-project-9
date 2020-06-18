@@ -17,9 +17,6 @@ function asyncHandler(cb) {
   };
 }
 
-// Array used to keep track of user records created
-const users = [];
-
 // Construct a router instance
 const router = express.Router();
 
@@ -67,19 +64,21 @@ router.post(
     // Hash new user's password
     user.password = bcryptjs.hashSync(user.password);
     // Add user to the `users` array
-    users.push(user);
+    User.create(user);
     // set status to 201 and end response
-    res.status(201).end();
+    res.status(201).location("/").end();
   }
 );
 
-const authenticateUser = (req, res, next) => {
+const authenticateUser = async (req, res, next) => {
   let message = null;
   // Parse user credentials from Authorization header
   const credentials = auth(req);
   // If the user's credentials are available...
   if (credentials) {
     // Retrieve user data
+    const users = await User.findAll();
+
     const user = users.find((u) => u.emailAddress === credentials.name);
     // If a user was successfully retrieved from the data
     if (user) {
@@ -90,6 +89,7 @@ const authenticateUser = (req, res, next) => {
       // If password match
       if (authenticated) {
         console.log(`Authentication successful for user: ${user.emailAddress}`);
+        // Store the user on the Request object
         req.currentUser = user;
       } else {
         message = `Authentication failure for user: ${user.emailAddress}`;
@@ -115,7 +115,8 @@ const authenticateUser = (req, res, next) => {
 router.get("/users", authenticateUser, (req, res) => {
   const user = req.currentUser;
   res.json({
-    name: user.firstName,
+    firstName: user.firstName,
+    lastName: user.lastName,
     emailAddress: user.emailAddress,
   });
 });

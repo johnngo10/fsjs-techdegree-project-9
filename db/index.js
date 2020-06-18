@@ -7,6 +7,9 @@ const Sequelize = require("sequelize");
 const options = {
   dialect: "sqlite",
   storage: "fsjstd-restapi.db",
+  define: {
+    timestamps: false,
+  },
 };
 
 const sequelize = new Sequelize(options);
