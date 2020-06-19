@@ -7,6 +7,9 @@ const auth = require("basic-auth");
 const { models } = require("./db");
 const { User, Course } = models;
 
+// Construct a router instance
+const router = express.Router();
+
 function asyncHandler(cb) {
   return async (req, res, next) => {
     try {
@@ -16,59 +19,6 @@ function asyncHandler(cb) {
     }
   };
 }
-
-// Construct a router instance
-const router = express.Router();
-
-// Creates a user
-router.post(
-  "/users",
-  [
-    check("firstName")
-      .exists({
-        checkNull: true,
-        checkFalsy: true,
-      })
-      .withMessage('Please provide a value for "firstName"'),
-    check("lastName")
-      .exists({
-        checkNull: true,
-        checkFalsy: true,
-      })
-      .withMessage('Please provide a value for "lastName"'),
-    check("emailAddress")
-      .exists({
-        checkNull: true,
-        checkFalsy: true,
-      })
-      .withMessage('Please provide a value for "emailAddress"'),
-    check("password")
-      .exists({
-        checkNull: true,
-        checkFalsy: true,
-      })
-      .withMessage('Please provide a value for "password"'),
-  ],
-  (req, res) => {
-    // Get validation result from request object
-    const errors = validationResult(req);
-    // If there are validation errors
-    if (!errors.isEmpty()) {
-      // Get list of error messages
-      const errorMessages = errors.array().map((error) => error.msg);
-      // Return the validation errors to the client
-      return res.status(400).json({ errors: errorMessages });
-    }
-    // Get the user from request body
-    const user = req.body;
-    // Hash new user's password
-    user.password = bcryptjs.hashSync(user.password);
-    // Add user to the `users` array
-    User.create(user);
-    // set status to 201 and end response
-    res.status(201).location("/").end();
-  }
-);
 
 const authenticateUser = async (req, res, next) => {
   let message = null;
@@ -111,15 +61,71 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
+// Creates a user
+router.post(
+  "/users",
+  [
+    check("firstName")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "firstName"'),
+    check("lastName")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "lastName"'),
+    check("emailAddress")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "emailAddress"')
+      .isEmail()
+      .withMessage('Please provide a valid "email address"'),
+    check("password")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "password"'),
+  ],
+  asyncHandler(async (req, res) => {
+    // Get validation result from request object
+    const errors = validationResult(req);
+    // If there are validation errors
+    if (!errors.isEmpty()) {
+      // Get list of error messages
+      const errorMessages = errors.array().map((error) => error.msg);
+      // Return the validation errors to the client
+      return res.status(400).json({ errors: errorMessages });
+    }
+    // Get the user from request body
+    const user = req.body;
+    // Hash new user's password
+    user.password = bcryptjs.hashSync(user.password);
+    // Add user to the `users` array
+    User.create(user);
+    // set status to 201 and end response
+    res.status(201).location("/").end();
+  })
+);
+
 // Returns current authenticated user
-router.get("/users", authenticateUser, (req, res) => {
-  const user = req.currentUser;
-  res.json({
-    firstName: user.firstName,
-    lastName: user.lastName,
-    emailAddress: user.emailAddress,
-  });
-});
+router.get(
+  "/users",
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const user = req.currentUser;
+    res.json({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      emailAddress: user.emailAddress,
+    });
+  })
+);
 
 // Returns a list of courses
 router.get(
@@ -135,16 +141,18 @@ router.get(
 router.get(
   "/courses/:id",
   asyncHandler(async (req, res) => {
-    try {
-      const course = await Course.findByPk(req.params.id);
-      if (course) {
-        res.json(course);
-      } else {
-        res.status(400).json({ message: "Quote not found" });
-      }
+    const course = await Course.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: "user",
+        },
+      ],
+    });
+    if (course) {
       res.json(course);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    } else {
+      res.status(404).json({ message: "Course not found" });
     }
   })
 );
@@ -152,16 +160,34 @@ router.get(
 // Creates a course
 router.post(
   "/courses",
+  [
+    check("title")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "title"'),
+    check("description")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a valid "description"'),
+  ],
   authenticateUser,
   asyncHandler(async (req, res) => {
-    if (req.body.title && req.body.description && req.body.userId) {
-      const course = await Course.create(req.body);
-      res.status(201).end();
-    } else {
-      res
-        .status(400)
-        .json({ message: "Title, description and userId required." });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map((error) => error.msg);
+      return res.status(400).json({ errors: errorMessages });
     }
+
+    const course = await Course.create(req.body);
+    // Set status to 201 Created, set location to course URL and end response
+    res
+      .status(201)
+      .location("/courses/" + course.id)
+      .end();
   })
 );
 

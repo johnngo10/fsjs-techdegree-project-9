@@ -9,7 +9,7 @@ const { sequelize, models } = require("./db");
 // Get reference to models
 const { User, Course } = models;
 
-async () => {
+(async () => {
   try {
     // Test connection to the database
     console.log("Connection to the database successful!");
@@ -26,7 +26,7 @@ async () => {
       throw error;
     }
   }
-};
+})();
 
 // variable to enable global error logging
 const enableGlobalErrorLogging =
