@@ -24,10 +24,10 @@ module.exports = (sequelize) => {
         validate: {
           isEmail: true,
         },
-        // unique: {
-        //   args: true,
-        //   msg: "Email Address already exist.",
-        // },
+        unique: {
+          args: true,
+          msg: "Email Address already exist.",
+        },
       },
       password: {
         type: Sequelize.STRING,

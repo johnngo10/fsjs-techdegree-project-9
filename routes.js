@@ -92,7 +92,7 @@ router.post(
       })
       .withMessage('Please provide a value for "password"'),
   ],
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     // Get validation result from request object
     const errors = validationResult(req);
     // If there are validation errors
@@ -107,9 +107,16 @@ router.post(
     // Hash new user's password
     user.password = bcryptjs.hashSync(user.password);
     // Add user to the `users` array
-    User.create(user);
-    // set status to 201 and end response
-    res.status(201).location("/").end();
+    User.create(user)
+      .then(function (user) {
+        // set status to 201 and end response
+        res.status(201).location("/").end();
+        console.log("User created successfully");
+      })
+      .catch(function (err) {
+        console.log(err.message);
+        return res.status(400).json({ errors: err.message });
+      });
   })
 );
 
