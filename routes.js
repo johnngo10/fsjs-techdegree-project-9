@@ -139,7 +139,20 @@ router.get(
   "/courses",
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const courses = await Course.findAll();
+    const courses = await Course.findAll({
+      attributes: {
+        exclude: ["createdAt", "updatedAt"],
+      },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
+        },
+      ],
+    });
     res.json(courses);
   })
 );
@@ -149,10 +162,16 @@ router.get(
   "/courses/:id",
   asyncHandler(async (req, res) => {
     const course = await Course.findByPk(req.params.id, {
+      attributes: {
+        exclude: ["createdAt", "updatedAt"],
+      },
       include: [
         {
           model: User,
           as: "user",
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
         },
       ],
     });
@@ -204,13 +223,19 @@ router.put(
   authenticateUser,
   asyncHandler(async (req, res) => {
     const course = await Course.findByPk(req.params.id);
+    const user = req.currentUser;
     if (req.body.title && req.body.description && req.body.userId) {
-      await course.update(req.body);
-      res.status(204).end();
+      // Check if course belongs to user
+      if (course.userId === user.id) {
+        await course.update(req.body);
+        res.status(204).end();
+      } else {
+        res.status(403).json({ message: "Course not found for current user" });
+      }
     } else {
       res
         .status(400)
-        .json({ message: "title, description and userID required" });
+        .json({ message: "Title, description and userID required" });
     }
   })
 );
@@ -221,11 +246,17 @@ router.delete(
   authenticateUser,
   asyncHandler(async (req, res, next) => {
     const course = await Course.findByPk(req.params.id);
+    const user = req.currentUser;
     if (course) {
-      await course.destroy();
-      res.status(204).end();
+      // Check if course belongs to user
+      if (course.userId === user.id) {
+        await course.destroy();
+        res.status(204).end();
+      } else {
+        res.status(403).json({ message: "Course not found for current user" });
+      }
     } else {
-      res.status(400).json({ message: "Course Not Found" });
+      res.status(400).json({ message: "Course not found" });
     }
   })
 );
