@@ -4,11 +4,6 @@ const fs = require("fs");
 const path = require("path");
 const Sequelize = require("sequelize");
 
-// const options = {
-//   dialect: "sqlite",
-//   storage: "fsjstd-restapi.db",
-// };
-
 const sequelize = new Sequelize({
   dialect: "sqlite",
   storage: "fsjstd-restapi.db",
