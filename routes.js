@@ -137,18 +137,17 @@ router.get(
 // Returns a list of courses
 router.get(
   "/courses",
-  authenticateUser,
   asyncHandler(async (req, res) => {
     const courses = await Course.findAll({
       attributes: {
-        exclude: ["createdAt", "updatedAt"],
+        exclude: ["createdAt", "updatedAt", "password"],
       },
       include: [
         {
           model: User,
           as: "user",
           attributes: {
-            exclude: ["createdAt", "updatedAt"],
+            exclude: ["createdAt", "updatedAt", "password"],
           },
         },
       ],
@@ -170,7 +169,7 @@ router.get(
           model: User,
           as: "user",
           attributes: {
-            exclude: ["createdAt", "updatedAt"],
+            exclude: ["createdAt", "updatedAt", "password"],
           },
         },
       ],
