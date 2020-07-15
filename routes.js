@@ -84,7 +84,7 @@ router.post(
       })
       .withMessage('Please provide a value for "emailAddress"')
       .isEmail()
-      .withMessage('Please provide a valid "email address"'),
+      .withMessage("Please provide a valid value in email format"),
     check("password")
       .exists({
         checkNull: true,
@@ -220,8 +220,28 @@ router.post(
 // Updates a course
 router.put(
   "/courses/:id",
+  [
+    check("title")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a value for "title"'),
+    check("description")
+      .exists({
+        checkNull: true,
+        checkFalsy: true,
+      })
+      .withMessage('Please provide a valid "description"'),
+  ],
   authenticateUser,
   asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map((error) => error.msg);
+      return res.status(400).json({ errors: errorMessages });
+    }
+
     const course = await Course.findByPk(req.params.id);
     const user = req.currentUser;
     if (req.body.title && req.body.description && req.body.userId) {
@@ -232,10 +252,6 @@ router.put(
       } else {
         res.status(403).json({ message: "Course not found for current user" });
       }
-    } else {
-      res
-        .status(400)
-        .json({ message: "Title, description and userID required" });
     }
   })
 );
